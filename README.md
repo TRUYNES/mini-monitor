@@ -22,7 +22,7 @@ services:
     container_name: mini-monitor
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "9876:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
@@ -32,4 +32,4 @@ services:
 5. Click **Deploy**.
 
 The image will be built automatically from the repository source code.
-Access the dashboard at `http://<your-ip>:3000`.
+Access the dashboard at `http://<your-ip>:9876`.
