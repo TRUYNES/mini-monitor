@@ -50,20 +50,26 @@
                     <div class="card-top">
                         <div class="sys-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                                <path d="M9 9h6v6H9z" />
+                                <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
+                                <rect x="9" y="9" width="6" height="6" />
+                                <line x1="9" y1="1" x2="9" y2="4" />
+                                <line x1="15" y1="1" x2="15" y2="4" />
+                                <line x1="9" y1="20" x2="9" y2="23" />
+                                <line x1="15" y1="20" x2="15" y2="23" />
+                                <line x1="20" y1="9" x2="23" y2="9" />
+                                <line x1="20" y1="14" x2="23" y2="14" />
+                                <line x1="1" y1="9" x2="4" y2="9" />
+                                <line x1="1" y1="14" x2="4" y2="14" />
                             </svg>
                         </div>
                         <span class="sys-title">CPU</span>
                     </div>
                     <div class="card-middle">
-                        <div class="sys-value" id="sys-cpu-val">--%</div>
+                        <div class="sys-value" id="sys-cpu-val">0%</div>
                         <div class="sys-sub" id="sys-cpu-model">Loading...</div>
                     </div>
                     <div class="card-bottom">
-                        <div class="mini-bar-bg">
-                            <div class="mini-bar-fill" id="sys-cpu-bar"></div>
-                        </div>
+                        <div class="chart-container" id="chart-cpu"></div>
                     </div>
                 </div>
 
@@ -72,23 +78,19 @@
                     <div class="card-top">
                         <div class="sys-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M2 2h20v20H2z" />
-                                <path d="M6 2v20" />
-                                <path d="M18 2v20" />
-                                <path d="M2 6h20" />
-                                <path d="M2 18h20" />
+                                <path
+                                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                                <line x1="12" y1="22.08" x2="12" y2="12" />
                             </svg>
                         </div>
                         <span class="sys-title">RAM</span>
                     </div>
                     <div class="card-middle">
-                        <div class="sys-value" id="sys-mem-val">--%</div>
-                        <div class="sys-sub" id="sys-mem-detail">-- / -- GB</div>
+                        <div class="sys-value" id="sys-mem-val">0%</div>
+                        <div class="sys-sub" id="sys-mem-detail">-- / --</div>
                     </div>
                     <div class="card-bottom">
-                        <div class="mini-bar-bg">
-                            <div class="mini-bar-fill" id="sys-mem-bar"></div>
-                        </div>
                         <div class="chart-container" id="chart-mem"></div>
                     </div>
                 </div>
