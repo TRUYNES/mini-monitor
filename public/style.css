@@ -333,34 +333,47 @@ h1 {
     margin-top: 4px;
 }
 
+/* Modern Card Layout */
+.system-card {
+    height: 180px;
+    /* Increased slightly */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
 .chart-container {
     width: 100%;
-    height: 60px;
-    /* Explicit height is required for flex child to have size */
+    height: 70px;
+    /* Taller chart */
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    /* Subtle separator */
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1));
 }
 
 .chart-svg {
     width: 100%;
     height: 100%;
-    /* Fill space minus labels */
     overflow: visible;
-    flex: 1;
 }
 
 .chart-labels {
+    position: absolute;
+    bottom: 2px;
+    left: 4px;
+    right: 4px;
     display: flex;
     justify-content: space-between;
-    width: 100%;
-    padding-top: 4px;
-    font-size: 10px;
+    font-size: 9px;
     color: #94a3b8;
-    /* Hardcoded fallback */
     font-family: monospace;
     opacity: 0.8;
+    pointer-events: none;
+    z-index: 5;
 }
 
 /* Tooltip & Badge */
