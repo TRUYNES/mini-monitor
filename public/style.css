@@ -3,7 +3,10 @@
     --bg-dark: #0f172a;
     --bg-card: #1e293b;
     --bg-header: #1e293b;
+    --text-primary: #f8fafc;
+    /* Restore correct var name */
     --text-main: #f8fafc;
+    /* Alias just in case */
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
 
@@ -332,7 +335,8 @@ h1 {
 
 .chart-container {
     width: 100%;
-    height: 100%;
+    height: 60px;
+    /* Explicit height is required for flex child to have size */
     position: relative;
     display: flex;
     flex-direction: column;
