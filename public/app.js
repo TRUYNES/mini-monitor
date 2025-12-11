@@ -142,7 +142,6 @@ class MiniChart {
                 <span class="lbl-start"></span>
                 <span class="lbl-end"></span>
             </div>
-            <div class="peak-badge"></div>
             <div class="chart-tooltip"></div>
             <div class="hover-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:20;cursor:crosshair;"></div>
         `;
@@ -153,11 +152,21 @@ class MiniChart {
         this.pathFill = this.container.querySelector('.chart-fill');
         this.tooltip = this.container.querySelector('.chart-tooltip');
         this.hoverLine = this.container.querySelector('.chart-hover-line');
-        this.badge = this.container.querySelector('.peak-badge');
         this.overlay = this.container.querySelector('.hover-overlay');
 
         this.lblStart = this.container.querySelector('.lbl-start');
         this.lblEnd = this.container.querySelector('.lbl-end');
+
+        // Badge: Move to Card Parent for Top-Right positioning
+        // Check if exists first (dev safety)
+        const cardData = this.container.closest('.system-card');
+        let badge = cardData.querySelector('.peak-badge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.className = 'peak-badge';
+            cardData.appendChild(badge); // Add to CARD, not chart container
+        }
+        this.badge = badge;
 
         // Define gradient and apply
         this.defineGradient(this.dataKey);
@@ -215,7 +224,7 @@ class MiniChart {
 
         // Update Badge with Peak Value AND Time
         const peakTimeStr = new Date(pMax.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        this.badge.innerHTML = `<span class="badge-label">PEAK</span> ${this.formatValue(pMax.val)} <span class="badge-time">at ${peakTimeStr}</span>`;
+        this.badge.innerHTML = `<span class="badge-label">PİK</span> ${this.formatValue(pMax.val)} <span class="badge-time">${peakTimeStr}</span>`;
 
         // Draw SVG
         const width = 100;

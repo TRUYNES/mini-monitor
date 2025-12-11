@@ -337,6 +337,8 @@ h1 {
 .system-card {
     height: 250px;
     /* Even taller as requested */
+    position: relative;
+    /* Key for badge positioning */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
