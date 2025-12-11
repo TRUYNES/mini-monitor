@@ -1,7 +1,8 @@
 services:
   mini-monitor:
     build: https://github.com/TRUYNES/mini-monitor.git#main
-    container_name: mini-monitor
+    image: trn-mini-monitor
+    container_name: trn-mini-monitor
     restart: unless-stopped
     ports:
       - "9876:3000"
