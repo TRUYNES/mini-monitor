@@ -1,9 +1,9 @@
 const socket = io();
-const tableBody = document.getElementById('container-list');
+const tableBody = document.getElementById('container-table-body'); // Fixed ID
 const rowTemplate = document.getElementById('row-template');
 const totalCountEl = document.getElementById('total-containers');
 const runningCountEl = document.getElementById('running-containers');
-const headers = document.querySelectorAll('th.sortable');
+const headers = document.querySelectorAll('th'); // Select all th, sortable or not
 
 // Sorting State
 let sortState = {
@@ -120,10 +120,10 @@ class MiniChart {
         gradient.setAttribute('x2', '0%');
         gradient.setAttribute('y2', '100%');
 
-        // Modern Fade: Color (0.3) -> Color (0.0)
-        // Avoid black mud at bottom
+        // Modern Fade: Color (0.2) -> Color (0.0)
+        // Extremely subtle to prevent "black" look complaints
         gradient.innerHTML = `
-            <stop offset="0%" stop-color="${this.color}" stop-opacity="0.3" />
+            <stop offset="0%" stop-color="${this.color}" stop-opacity="0.2" />
             <stop offset="100%" stop-color="${this.color}" stop-opacity="0" />
         `;
 
