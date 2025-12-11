@@ -1,0 +1,11 @@
+services:
+  mini-monitor:
+    build: .
+    container_name: mini-monitor
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ=Europe/Istanbul
