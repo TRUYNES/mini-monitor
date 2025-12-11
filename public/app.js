@@ -130,10 +130,10 @@ class MiniChart {
     }
 
     setup() {
+        // Ensure defs and gradient exist
         this.container.innerHTML = `
             <svg class="chart-svg" preserveAspectRatio="none">
-                <defs>
-                </defs>
+                <defs></defs>
                 <path class="chart-fill" d="" style="stroke:none"></path>
                 <path class="chart-line" d=""></path>
                 <line class="chart-hover-line" x1="0" y1="0" x2="0" y2="100%"></line>
@@ -144,10 +144,11 @@ class MiniChart {
             </div>
             <div class="peak-badge"></div>
             <div class="chart-tooltip"></div>
-            <div class="hover-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></div>
+            <div class="hover-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:20;cursor:crosshair;"></div>
         `;
 
         this.svg = this.container.querySelector('svg');
+        this.defs = this.container.querySelector('defs');
         this.pathLine = this.container.querySelector('.chart-line');
         this.pathFill = this.container.querySelector('.chart-fill');
         this.tooltip = this.container.querySelector('.chart-tooltip');
@@ -157,6 +158,10 @@ class MiniChart {
 
         this.lblStart = this.container.querySelector('.lbl-start');
         this.lblEnd = this.container.querySelector('.lbl-end');
+
+        // Define gradient and apply
+        this.defineGradient(this.dataKey);
+        this.pathFill.setAttribute('fill', `url(#gradient-${this.dataKey})`);
 
         this.overlay.addEventListener('mousemove', (e) => this.onHover(e));
         this.overlay.addEventListener('mouseleave', () => this.onLeave());
@@ -206,27 +211,27 @@ class MiniChart {
             }
         }
 
-        if (maxVal === 0) maxVal = 1; // Prevent divide by zero
+        if (maxVal === 0) maxVal = 1;
 
-        // Update Badge
-        this.badge.textContent = `Peak: ${this.formatValue(pMax.val)}`;
+        // Update Badge with Peak Value AND Time
+        const peakTimeStr = new Date(pMax.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.badge.innerHTML = `<span class="badge-label">PEAK</span> ${this.formatValue(pMax.val)} <span class="badge-time">at ${peakTimeStr}</span>`;
 
         // Draw SVG
-        const width = 100; // viewBox width %
-        const height = 100; // viewBox height %
+        const width = 100;
+        const height = 100;
 
         this.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
 
         let pathD = points.map((p, i) => {
             const x = (i / (points.length - 1)) * width;
-            const y = height - ((p.y / maxVal) * height); // Invert Y
+            const y = height - ((p.y / maxVal) * height);
             return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
         }).join(' ');
 
         this.pathLine.setAttribute('d', pathD);
         this.pathFill.setAttribute('d', `${pathD} L ${width} ${height} L 0 ${height} Z`);
 
-        // Store data for interactions
         this.renderData = { points, maxVal, width, height };
     }
 
@@ -237,24 +242,27 @@ class MiniChart {
         const x = e.clientX - rect.left;
         const relX = Math.max(0, Math.min(1, x / rect.width));
 
-        // Find closest point
         const index = Math.round(relX * (this.renderData.points.length - 1));
         const point = this.renderData.points[index];
 
         if (!point) return;
 
-        // Show Tooltip
-        const timeStr = new Date(point.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        this.tooltip.textContent = `${timeStr} - ${this.formatValue(point.raw)}`;
-        this.tooltip.style.display = 'block';
-        this.tooltip.style.left = `${x}px`;
-        this.tooltip.style.top = '10%'; // Top of chart
+        const timeStr = new Date(point.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        this.tooltip.innerHTML = `<strong>${this.formatValue(point.raw)}</strong><br><span style="font-size:10px;opacity:0.8">${timeStr}</span>`;
 
-        // Show line
-        const lineX = (index / (this.renderData.points.length - 1)) * 100; // % position
+        // Dynamic positioning
+        let leftPos = x + 10;
+        if (leftPos + 80 > rect.width) leftPos = x - 90; // Flip if too close to right edge
+
+        this.tooltip.style.display = 'block';
+        this.tooltip.style.left = `${leftPos}px`;
+        this.tooltip.style.top = '10px'; // Keep it near top to not obscure chart
+
+        // Show hover line
+        const lineX = (index / (this.renderData.points.length - 1)) * 100;
         this.hoverLine.setAttribute('x1', `${lineX}%`);
         this.hoverLine.setAttribute('x2', `${lineX}%`);
-        this.hoverLine.style.opacity = 1;
+        this.hoverLine.style.opacity = 0.5;
     }
 
     onLeave() {
