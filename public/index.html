@@ -45,58 +45,91 @@
         <main>
             <!-- System Overview Section -->
             <div class="system-overview" id="system-overview">
-                <div class="system-card">
-                    <div class="sys-icon cpu-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <path d="M9 9h6v6H9z" />
-                        </svg>
+                <!-- CPU Card -->
+                <div class="system-card card-cpu">
+                    <div class="card-top">
+                        <div class="sys-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                <path d="M9 9h6v6H9z" />
+                            </svg>
+                        </div>
+                        <span class="sys-title">CPU</span>
                     </div>
-                    <div class="sys-info">
-                        <span class="sys-label">CPU Usage</span>
+                    <div class="card-middle">
                         <div class="sys-value" id="sys-cpu-val">--%</div>
                         <div class="sys-sub" id="sys-cpu-model">Loading...</div>
                     </div>
-                    <div class="sys-chart">
+                    <div class="card-bottom">
                         <div class="mini-bar-bg">
                             <div class="mini-bar-fill" id="sys-cpu-bar"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="system-card">
-                    <div class="sys-icon mem-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M2 2h20v20H2z" />
-                            <path d="M6 2v20" />
-                            <path d="M18 2v20" />
-                            <path d="M2 6h20" />
-                            <path d="M2 18h20" />
-                        </svg>
+                <!-- RAM Card -->
+                <div class="system-card card-ram">
+                    <div class="card-top">
+                        <div class="sys-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 2h20v20H2z" />
+                                <path d="M6 2v20" />
+                                <path d="M18 2v20" />
+                                <path d="M2 6h20" />
+                                <path d="M2 18h20" />
+                            </svg>
+                        </div>
+                        <span class="sys-title">RAM</span>
                     </div>
-                    <div class="sys-info">
-                        <span class="sys-label">RAM Usage</span>
+                    <div class="card-middle">
                         <div class="sys-value" id="sys-mem-val">--%</div>
                         <div class="sys-sub" id="sys-mem-detail">-- / -- GB</div>
                     </div>
-                    <div class="sys-chart">
+                    <div class="card-bottom">
                         <div class="mini-bar-bg">
                             <div class="mini-bar-fill" id="sys-mem-bar"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="system-card">
-                    <div class="sys-icon os-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M8 12h8" />
-                        </svg>
+                <!-- Temperature Card -->
+                <div class="system-card card-temp">
+                    <div class="card-top">
+                        <div class="sys-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
+                            </svg>
+                        </div>
+                        <span class="sys-title">TEMP</span>
                     </div>
-                    <div class="sys-info">
-                        <span class="sys-label">System</span>
-                        <div class="sys-value" id="sys-os-distro">Loading...</div>
-                        <div class="sys-sub" id="sys-uptime">Uptime: --</div>
+                    <div class="card-middle">
+                        <div class="sys-value" id="sys-temp-val">--°C</div>
+                        <div class="sys-sub">Core Temp</div>
+                    </div>
+                    <div class="card-bottom">
+                        <div class="mini-bar-bg">
+                            <div class="mini-bar-fill" id="sys-temp-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Info Card -->
+                <div class="system-card card-os">
+                    <div class="card-top">
+                        <div class="sys-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M8 12h8" />
+                            </svg>
+                        </div>
+                        <span class="sys-title">SYSTEM</span>
+                    </div>
+                    <div class="card-middle">
+                        <div class="sys-value-sm" id="sys-os-distro">Loading...</div>
+                        <div class="sys-sub" id="sys-uptime">--</div>
+                    </div>
+                    <div class="card-bottom">
+                        <!-- Spacer -->
                     </div>
                 </div>
             </div>

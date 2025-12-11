@@ -134,14 +134,15 @@ async function monitorSystem() {
         brand: cpu.brand,
         cores: cpu.cores,
         usage: currentLoad.currentLoad.toFixed(1),
-        temp: temp.main // May be null if not supported/accessible
+        temp: temp.main || 0 // Default to 0 if not available
       },
       mem: {
         total: mem.total,
         free: mem.free,
-        used: mem.used,
+        used: mem.active, // "Active" memory is usually what users mean (excluding cache)
         active: mem.active,
-        available: mem.available
+        available: mem.available,
+        percent: (mem.active / mem.total) * 100 // Pre-calculate percent based on active
       },
       os: {
         platform: osInfo.platform,

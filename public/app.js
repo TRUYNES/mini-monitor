@@ -61,11 +61,25 @@ function updateSystemStats(stats) {
     document.getElementById('sys-cpu-model').textContent = `${stats.cpu.manufacturer} ${stats.cpu.brand}`;
     document.getElementById('sys-cpu-bar').style.width = `${Math.min(stats.cpu.usage, 100)}%`;
 
-    // Memory
-    const memPercent = (stats.mem.used / stats.mem.total) * 100;
+    // Memory - Use percent from backend or calc
+    const memPercent = stats.mem.percent || ((stats.mem.used / stats.mem.total) * 100);
     document.getElementById('sys-mem-val').textContent = `${memPercent.toFixed(1)}%`;
     document.getElementById('sys-mem-detail').textContent = `${formatBytes(stats.mem.used)} / ${formatBytes(stats.mem.total)}`;
     document.getElementById('sys-mem-bar').style.width = `${Math.min(memPercent, 100)}%`;
+
+    // Temp
+    const tempVal = stats.cpu.temp;
+    const tempEl = document.getElementById('sys-temp-val');
+    const tempBar = document.getElementById('sys-temp-bar');
+
+    if (tempVal && tempVal > 0) {
+        tempEl.textContent = `${tempVal.toFixed(1)}°C`;
+        // Scale temp 0-100 (assuming 100 is max danger)
+        tempBar.style.width = `${Math.min(tempVal, 100)}%`;
+    } else {
+        tempEl.textContent = 'N/A';
+        tempBar.style.width = '0%';
+    }
 
     // System
     document.getElementById('sys-os-distro').textContent = `${stats.os.distro} ${stats.os.release}`;
