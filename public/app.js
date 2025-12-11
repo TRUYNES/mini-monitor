@@ -173,8 +173,9 @@ class MiniChart {
         this.overlay.style.cursor = 'default';
 
         // Define fill directly (No Gradient - Fixes "Black Fill" issues)
-        this.pathFill.setAttribute('fill', this.color);
-        this.pathFill.setAttribute('fill-opacity', '0.2');
+        // Use INLINE STYLES to override any CSS / Browser defaults (Black)
+        this.pathFill.style.fill = this.color;
+        this.pathFill.style.fillOpacity = '0.2';
         this.pathFill.style.transition = 'opacity 0.3s';
 
         this.overlay.addEventListener('mousemove', (e) => this.onHover(e));
