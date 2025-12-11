@@ -89,7 +89,7 @@ function updateSystemStats(stats) {
         tempEl.textContent = 'N/A';
     }
 
-    // Network (New)
+    // Network
     if (stats.net) {
         document.getElementById('sys-net-rx').textContent = formatBytes(stats.net.rx);
         document.getElementById('sys-net-tx').textContent = formatBytes(stats.net.tx);
@@ -258,13 +258,45 @@ class MiniChart {
 // Initialize Charts
 let charts = {};
 document.addEventListener('DOMContentLoaded', () => {
-    charts = {
-        cpu: new MiniChart('chart-cpu', 'cpu.usage', 'card-cpu'),
-        mem: new MiniChart('chart-mem', 'mem.percent', 'card-ram'),
-        temp: new MiniChart('chart-temp', 'cpu.temp', 'card-temp'),
-        rx: new MiniChart('chart-rx', 'net.rx', 'card-down'),
-        tx: new MiniChart('chart-tx', 'net.tx', 'card-up')
-    };
+    // Init Charts
+    charts.cpu = new MiniChart('chart-cpu', 'cpu.usage', '#3b82f6');
+    charts.mem = new MiniChart('chart-mem', 'mem.percent', '#8b5cf6');
+    charts.temp = new MiniChart('chart-temp', 'cpu.temp', '#f43f5e');
+    charts.rx = new MiniChart('chart-rx', 'net.rx', '#10b981'); // Green for Down
+    charts.tx = new MiniChart('chart-tx', 'net.tx', '#f97316'); // Orange for Up
+
+    socket.on('connect', () => {
+        statusIndicator.classList.add('online');
+    });
+
+    socket.on('disconnect', () => {
+        statusIndicator.classList.remove('online');
+    });
+
+    socket.on('initHistory', (history) => {
+        systemHistory = history;
+        // Render all
+        charts.cpu.render(systemHistory);
+        charts.mem.render(systemHistory);
+        charts.temp.render(systemHistory);
+        charts.rx.render(systemHistory);
+        charts.tx.render(systemHistory);
+    });
+
+    socket.on('systemStats', (stats) => {
+        updateSystemStats(stats);
+
+        systemHistory.push(stats);
+        if (systemHistory.length > 5760) systemHistory.shift(); // Sync with backend limit
+
+        if (document.visibilityState === 'visible') {
+            charts.cpu.render(systemHistory);
+            charts.mem.render(systemHistory);
+            charts.temp.render(systemHistory);
+            charts.rx.render(systemHistory);
+            charts.tx.render(systemHistory);
+        }
+    });
 });
 
 function renderAllCharts() {

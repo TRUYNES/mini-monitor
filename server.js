@@ -181,13 +181,16 @@ async function monitorSystem() {
       si.networkStats()
     ]);
 
-    // Aggregate network stats (all interfaces)
+    // Calculate total network traffic (sum of all interfaces or default)
     let netRx = 0;
     let netTx = 0;
-    if (netStats && netStats.length) {
+    // netStats is an array of interfaces
+    if (Array.isArray(netStats)) {
       netStats.forEach(iface => {
-        netRx += iface.rx_sec; // bytes per second
-        netTx += iface.tx_sec;
+        // Include only active non-internal interfaces if desired, 
+        // but simply summing rx_sec/tx_sec is usually fine for "system total"
+        netRx += (iface.rx_sec || 0);
+        netTx += (iface.tx_sec || 0);
       });
     }
 
@@ -198,15 +201,15 @@ async function monitorSystem() {
         brand: cpu.brand,
         cores: cpu.cores,
         usage: currentLoad.currentLoad.toFixed(1),
-        temp: temp.main || 0 // Default to 0 if not available
+        temp: temp.main || 0
       },
       mem: {
         total: mem.total,
         free: mem.free,
-        used: mem.active, // "Active" memory is usually what users mean (excluding cache)
+        used: mem.active,
         active: mem.active,
         available: mem.available,
-        percent: (mem.active / mem.total) * 100 // Pre-calculate percent based on active
+        percent: (mem.active / mem.total) * 100
       },
       net: {
         rx: netRx,
