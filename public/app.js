@@ -169,11 +169,13 @@ class MiniChart {
         }
         this.badge = badge;
 
-        // Define gradient and apply
-        // Safe ID: replace dots with dashes
-        const safeId = this.dataKey.replace(/\./g, '-');
-        this.defineGradient(safeId);
-        this.pathFill.setAttribute('fill', `url(#gradient-${safeId})`);
+        // Standardize cursor
+        this.overlay.style.cursor = 'default';
+
+        // Define fill directly (No Gradient - Fixes "Black Fill" issues)
+        this.pathFill.setAttribute('fill', this.color);
+        this.pathFill.setAttribute('fill-opacity', '0.2');
+        this.pathFill.style.transition = 'opacity 0.3s';
 
         this.overlay.addEventListener('mousemove', (e) => this.onHover(e));
         this.overlay.addEventListener('mouseleave', () => this.onLeave());
@@ -208,7 +210,7 @@ class MiniChart {
             renderData.push({ ...renderData[0] });
         }
 
-        // Downsample for rendering performance if too many points (render max 200 pts)
+        // Downsample for rendering performance
         const sampleRate = Math.ceil(renderData.length / 200);
         const points = [];
         let maxVal = 0;
@@ -230,27 +232,27 @@ class MiniChart {
 
         if (maxVal === 0) maxVal = 1;
 
-        // Update Badge with Peak Value AND Time
+        // Update Badge
         const peakTimeStr = new Date(pMax.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        this.badge.innerHTML = `<span class="badge-label">PİK</span> ${this.formatValue(pMax.val)} <span class="badge-time">${peakTimeStr}</span>`;
+        if (this.badge) {
+            this.badge.innerHTML = `<span>PİK</span> <span>${pMax.val.toFixed(1)}${this.getDataUnit()}</span> <span style="font-size:0.8em;opacity:0.6;margin-left:4px">${peakTimeStr}</span>`;
+        }
 
-        // Draw SVG
-        const width = 100;
+        // Create Path
+        const width = 1000;
         const height = 100;
+        let pathD = `M 0 ${height}`;
 
-        this.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-
-        let pathD = points.map((p, i) => {
+        points.forEach((p, i) => {
             const x = (i / (points.length - 1)) * width;
             const y = height - ((p.y / maxVal) * height);
-            return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-        }).join(' ');
+            pathD += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+        });
 
         this.pathLine.setAttribute('d', pathD);
         this.pathFill.setAttribute('d', `${pathD} L ${width} ${height} L 0 ${height} Z`);
 
-        this.points = points; // Store directly for hover access
-        this.maxVal = maxVal; // Store maxVal for onHover if needed, though not used in new snippet
+        this.points = points;
     }
 
     onHover(e) {
@@ -268,34 +270,32 @@ class MiniChart {
         const width = rect.width;
 
         // Find closest point
-        // Map x (0..width) to index (0..points.length-1)
         const ratio = Math.max(0, Math.min(1, x / width));
         const index = Math.floor(ratio * (this.points.length - 1));
         const point = this.points[index];
 
         if (!point) return;
 
-        // Draw Vertical Line
-        // X needs to be mapped to SVG ViewBox (0..100) -> NO, we use percentage for line x1/x2
+        // Hover Line
         const percent = (index / (this.points.length - 1)) * 100;
         this.hoverLine.setAttribute('x1', `${percent}%`);
         this.hoverLine.setAttribute('x2', `${percent}%`);
         this.hoverLine.style.opacity = 1;
 
-        // Show Tooltip
-        // Position: based on mouse X, but clamped
+        // Tooltip
         let leftPos = x + 10;
         if (leftPos + 90 > width) leftPos = x - 100;
 
-        // Format Date
         const date = new Date(point.time);
         const timeStr = date.toLocaleTimeString();
 
         this.tooltip.style.opacity = 1;
+        this.tooltip.style.zIndex = 100; // Force on top
         this.tooltip.style.left = `${leftPos}px`;
-        this.tooltip.style.top = '10px'; // Keep it near top to not obscure chart
+        // Ensure unit is safe string
+        const unit = this.getDataUnit() || '';
         this.tooltip.innerHTML = `
-            <div><strong>${point.y.toFixed(1)}</strong> ${this.getDataUnit()}</div>
+            <div><strong>${point.y.toFixed(1)}</strong> ${unit}</div>
             <div style="font-size:0.8em;opacity:0.7">${timeStr}</div>
         `;
     }
