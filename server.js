@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const Docker = require('dockerode');
 const path = require('path');
+const si = require('systeminformation');
 
 const app = express();
 const server = http.createServer(app);
@@ -55,12 +56,23 @@ function calculateMemoryUsage(stats) {
   };
 }
 
+function calculateBlockIO(blkioStats) {
+  if (!blkioStats || !blkioStats.io_service_bytes_recursive) return { read: 0, write: 0 };
+
+  let read = 0;
+  let write = 0;
+
+  blkioStats.io_service_bytes_recursive.forEach(entry => {
+    if (entry.op === 'Read') read += entry.value;
+    if (entry.op === 'Write') write += entry.value;
+  });
+
+  return { read, write };
+}
+
 async function monitorContainers() {
   try {
     const containers = await docker.listContainers({ all: true });
-
-    // We will fetch full list + basic stats in a polling manner for simplicity and robustness
-    // For a production 'top' like feel, polling every 2-3 seconds is efficient enough compared to keeping open streams for N containers.
 
     const enrichedContainers = await Promise.all(containers.map(async (containerInfo) => {
       const container = docker.getContainer(containerInfo.Id);
@@ -105,29 +117,57 @@ async function monitorContainers() {
   }
 }
 
-function calculateBlockIO(blkioStats) {
-  if (!blkioStats || !blkioStats.io_service_bytes_recursive) return { read: 0, write: 0 };
+async function monitorSystem() {
+  try {
+    // Note: cpuTemperature might require specific privileges on some systems
+    const [cpu, mem, osInfo, currentLoad, temp] = await Promise.all([
+      si.cpu(),
+      si.mem(),
+      si.osInfo(),
+      si.currentLoad(),
+      si.cpuTemperature()
+    ]);
 
-  let read = 0;
-  let write = 0;
+    const stats = {
+      cpu: {
+        manufacturer: cpu.manufacturer,
+        brand: cpu.brand,
+        cores: cpu.cores,
+        usage: currentLoad.currentLoad.toFixed(1),
+        temp: temp.main // May be null if not supported/accessible
+      },
+      mem: {
+        total: mem.total,
+        free: mem.free,
+        used: mem.used,
+        active: mem.active,
+        available: mem.available
+      },
+      os: {
+        platform: osInfo.platform,
+        distro: osInfo.distro,
+        release: osInfo.release,
+        uptime: si.time().uptime
+      }
+    };
 
-  blkioStats.io_service_bytes_recursive.forEach(entry => {
-    if (entry.op === 'Read') read += entry.value;
-    if (entry.op === 'Write') write += entry.value;
-  });
-
-  return { read, write };
+    io.emit('systemStats', stats);
+  } catch (e) {
+    console.error('Error getting system stats:', e);
+  }
 }
-
-
 
 // Update loop
 const POLL_INTERVAL = 2000;
-setInterval(monitorContainers, POLL_INTERVAL);
+setInterval(() => {
+  monitorContainers();
+  monitorSystem();
+}, POLL_INTERVAL);
 
 io.on('connection', (socket) => {
   console.log('Client connected');
   monitorContainers(); // Send immediate update
+  monitorSystem();
 
   socket.on('disconnect', () => {
     console.log('Client disconnected');

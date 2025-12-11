@@ -43,6 +43,64 @@
         </header>
 
         <main>
+            <!-- System Overview Section -->
+            <div class="system-overview" id="system-overview">
+                <div class="system-card">
+                    <div class="sys-icon cpu-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <path d="M9 9h6v6H9z" />
+                        </svg>
+                    </div>
+                    <div class="sys-info">
+                        <span class="sys-label">CPU Usage</span>
+                        <div class="sys-value" id="sys-cpu-val">--%</div>
+                        <div class="sys-sub" id="sys-cpu-model">Loading...</div>
+                    </div>
+                    <div class="sys-chart">
+                        <div class="mini-bar-bg">
+                            <div class="mini-bar-fill" id="sys-cpu-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="system-card">
+                    <div class="sys-icon mem-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 2h20v20H2z" />
+                            <path d="M6 2v20" />
+                            <path d="M18 2v20" />
+                            <path d="M2 6h20" />
+                            <path d="M2 18h20" />
+                        </svg>
+                    </div>
+                    <div class="sys-info">
+                        <span class="sys-label">RAM Usage</span>
+                        <div class="sys-value" id="sys-mem-val">--%</div>
+                        <div class="sys-sub" id="sys-mem-detail">-- / -- GB</div>
+                    </div>
+                    <div class="sys-chart">
+                        <div class="mini-bar-bg">
+                            <div class="mini-bar-fill" id="sys-mem-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="system-card">
+                    <div class="sys-icon os-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M8 12h8" />
+                        </svg>
+                    </div>
+                    <div class="sys-info">
+                        <span class="sys-label">System</span>
+                        <div class="sys-value" id="sys-os-distro">Loading...</div>
+                        <div class="sys-sub" id="sys-uptime">Uptime: --</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="table-container">
                 <table class="container-table" id="monitor-table">
                     <thead>

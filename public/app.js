@@ -51,6 +51,36 @@ socket.on('containers', (containers) => {
     updateTable(containers);
 });
 
+socket.on('systemStats', (stats) => {
+    updateSystemStats(stats);
+});
+
+function updateSystemStats(stats) {
+    // CPU
+    document.getElementById('sys-cpu-val').textContent = `${stats.cpu.usage}%`;
+    document.getElementById('sys-cpu-model').textContent = `${stats.cpu.manufacturer} ${stats.cpu.brand}`;
+    document.getElementById('sys-cpu-bar').style.width = `${Math.min(stats.cpu.usage, 100)}%`;
+
+    // Memory
+    const memPercent = (stats.mem.used / stats.mem.total) * 100;
+    document.getElementById('sys-mem-val').textContent = `${memPercent.toFixed(1)}%`;
+    document.getElementById('sys-mem-detail').textContent = `${formatBytes(stats.mem.used)} / ${formatBytes(stats.mem.total)}`;
+    document.getElementById('sys-mem-bar').style.width = `${Math.min(memPercent, 100)}%`;
+
+    // System
+    document.getElementById('sys-os-distro').textContent = `${stats.os.distro} ${stats.os.release}`;
+    document.getElementById('sys-uptime').textContent = `Uptime: ${formatUptime(stats.os.uptime)}`;
+}
+
+function formatUptime(seconds) {
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor(seconds % (3600 * 24) / 3600);
+    const m = Math.floor(seconds % 3600 / 60);
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+}
+
 function updateSummary(containers) {
     totalCountEl.textContent = containers.length;
     const running = containers.filter(c => c.state === 'running').length;
