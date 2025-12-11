@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini Monitor - Docker Dashboard</title>
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Socket.io -->
     <script src="/socket.io/socket.io.js"></script>
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="app-container">
         <header>
@@ -39,64 +43,68 @@
         </header>
 
         <main>
-            <div class="grid-layout" id="container-grid">
-                <!-- Containers will be injected here via JS -->
+            <div class="table-container">
+                <table class="container-table" id="monitor-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="name" class="sortable">Name <span class="sort-icon"></span></th>
+                            <th data-sort="id" class="sortable">ID <span class="sort-icon"></span></th>
+                            <th data-sort="state" class="sortable">State <span class="sort-icon"></span></th>
+                            <th data-sort="cpu" class="sortable">CPU % <span class="sort-icon"></span></th>
+                            <th data-sort="memory" class="sortable">Mem % <span class="sort-icon"></span></th>
+                            <th data-sort="memusage" class="sortable">Mem Usage / Limit <span class="sort-icon"></span>
+                            </th>
+                            <th data-sort="net" class="sortable">Net I/O <span class="sort-icon"></span></th>
+                            <th data-sort="block" class="sortable">Block I/O <span class="sort-icon"></span></th>
+                            <th data-sort="pids" class="sortable">PIDs <span class="sort-icon"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="container-list">
+                        <!-- Rows will be injected here via JS -->
+                    </tbody>
+                </table>
             </div>
         </main>
     </div>
 
-    <!-- Template for Container Card -->
-    <template id="card-template">
-        <div class="container-card">
-            <div class="card-header">
-                <div class="status-indicator"></div>
-                <div class="container-info">
-                    <h3 class="container-name"></h3>
-                    <span class="container-id"></span>
-                </div>
-                <div class="container-image-badge"></div>
-            </div>
-            
-            <div class="card-body">
-                <div class="metric-row">
-                    <div class="metric">
-                        <span class="metric-label">CPU</span>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill cpu-fill"></div>
-                        </div>
-                        <span class="metric-value cpu-value">0%</span>
+    <!-- Template for Container Row -->
+    <template id="row-template">
+        <tr class="container-row">
+            <td class="col-name">
+                <div class="name-wrapper">
+                    <div class="status-dot"></div>
+                    <div class="name-text">
+                        <span class="c-name"></span>
+                        <span class="c-image-sub"></span>
                     </div>
                 </div>
-                
-                <div class="metric-row">
-                    <div class="metric">
-                        <span class="metric-label">Memory</span>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill mem-fill"></div>
-                        </div>
-                        <div class="metric-details">
-                            <span class="metric-value mem-percent">0%</span>
-                            <span class="metric-sub mem-usage">0 MB / 0 GB</span>
-                        </div>
+            </td>
+            <td class="col-id"><span class="c-id"></span></td>
+            <td class="col-state"><span class="c-state"></span></td>
+            <td class="col-cpu">
+                <div class="bar-wrapper">
+                    <span class="c-cpu-val">0%</span>
+                    <div class="progress-bar-bg small">
+                        <div class="progress-bar-fill c-cpu-bar"></div>
                     </div>
                 </div>
-
-                <div class="mini-chart-container">
-                    <canvas class="usage-chart"></canvas>
+            </td>
+            <td class="col-mem-percent">
+                <div class="bar-wrapper">
+                    <span class="c-mem-percent-val">0%</span>
+                    <div class="progress-bar-bg small">
+                        <div class="progress-bar-fill c-mem-bar"></div>
+                    </div>
                 </div>
-                
-                <div class="network-stats">
-                   <span class="net-icon">⇄</span> <span class="net-io">0B / 0B</span>
-                </div>
-            </div>
-            
-            <div class="card-footer">
-                <span class="state-text"></span>
-                <span class="uptime-text"></span>
-            </div>
-        </div>
+            </td>
+            <td class="col-mem-usage"><span class="c-mem-usage"></span></td>
+            <td class="col-net"><span class="c-net"></span></td>
+            <td class="col-block"><span class="c-block"></span></td>
+            <td class="col-pids"><span class="c-pids"></span></td>
+        </tr>
     </template>
 
     <script src="app.js"></script>
 </body>
+
 </html>

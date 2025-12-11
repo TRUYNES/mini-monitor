@@ -1,16 +1,54 @@
 const socket = io();
-const containerGrid = document.getElementById('container-grid');
-const cardTemplate = document.getElementById('card-template');
+const tableBody = document.getElementById('container-list');
+const rowTemplate = document.getElementById('row-template');
 const totalCountEl = document.getElementById('total-containers');
 const runningCountEl = document.getElementById('running-containers');
+const headers = document.querySelectorAll('th.sortable');
 
-// Store charts and previous data to avoid flickering/re-renders
-const CHARTS = {};
-const PREV_DATA = {};
+// Sorting State
+let sortState = {
+    column: 'name',
+    direction: 'asc' // or 'desc'
+};
+
+// Event Listeners for Sorting
+headers.forEach(th => {
+    th.addEventListener('click', () => {
+        const column = th.dataset.sort;
+        if (sortState.column === column) {
+            sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortState.column = column;
+            sortState.direction = 'desc'; // Default to desc for metrics usually
+            if (column === 'name' || column === 'id' || column === 'state') {
+                sortState.direction = 'asc'; // Default asc for text
+            }
+        }
+        updateHeaderStyles();
+        // Trigger re-render if we have cached data, but for now we wait for next socket emit or just re-sort current?
+        // Ideally we wait for next update, but we can force re-render if we stored data.
+        // Let's rely on the fast polling for simplicity, or we store the last received data.
+        if (lastContainersData) {
+            updateTable(lastContainersData);
+        }
+    });
+});
+
+function updateHeaderStyles() {
+    headers.forEach(th => {
+        th.classList.remove('asc', 'desc');
+        if (th.dataset.sort === sortState.column) {
+            th.classList.add(sortState.direction);
+        }
+    });
+}
+
+let lastContainersData = [];
 
 socket.on('containers', (containers) => {
+    lastContainersData = containers;
     updateSummary(containers);
-    updateGrid(containers);
+    updateTable(containers);
 });
 
 function updateSummary(containers) {
@@ -19,175 +57,147 @@ function updateSummary(containers) {
     runningCountEl.textContent = running;
 }
 
-function updateGrid(containers) {
-    // Current IDs for cleanup
-    const currentIds = new Set(containers.map(c => c.id));
+function updateTable(containers) {
+    // Sort containers
+    const sorted = [...containers].sort((a, b) => {
+        const valA = getSortValue(a, sortState.column);
+        const valB = getSortValue(b, sortState.column);
 
-    // Remove old cards
-    document.querySelectorAll('.container-card').forEach(card => {
-        const id = card.id.replace('card-', '');
-        if (!currentIds.has(id)) {
-            if (CHARTS[id]) {
-                CHARTS[id].destroy();
-                delete CHARTS[id];
-            }
-            card.remove();
-        }
+        if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
+        return 0;
     });
 
-    containers.forEach(container => {
-        let card = document.getElementById(`card-${container.id}`);
+    // We reconcile rows to avoid total redraws if possible, 
+    // but for sorting, re-ordering DOM nodes or simple clear-and-fill is easiest.
+    // Given the small number of containers usually, clearing is fine, but let's try to match by ID for updates?
+    // Actually, if we sort, the order changes. 
+    // Let's do a smart update: find existing tr for id, update it, then append in order.
 
-        if (!card) {
-            // Create new card
-            const clone = cardTemplate.content.cloneNode(true);
-            card = clone.querySelector('.container-card');
-            card.id = `card-${container.id}`;
-            containerGrid.appendChild(card);
+    // Clear the body and re-append in correct order
+    // But we reuse elements to keep references
 
-            // Init Chart
-            initChart(container.id, card);
+    const existingRows = {};
+    document.querySelectorAll('.container-row').forEach(row => {
+        existingRows[row.dataset.id] = row;
+    });
+
+    tableBody.innerHTML = '';
+
+    sorted.forEach(container => {
+        let row = existingRows[container.id];
+
+        if (!row) {
+            const clone = rowTemplate.content.cloneNode(true);
+            row = clone.querySelector('tr');
+            row.dataset.id = container.id;
         }
 
-        // Update Content
-        updateCardContent(card, container);
+        updateRowContent(row, container);
+        tableBody.appendChild(row);
     });
 }
 
-function updateCardContent(card, container) {
+function getSortValue(container, column) {
+    if (!container.stats && column !== 'name' && column !== 'id' && column !== 'state') return -1;
+
+    switch (column) {
+        case 'name': return container.name.toLowerCase();
+        case 'id': return container.id;
+        case 'state': return container.state;
+        case 'cpu': return parseFloat(container.stats?.cpu || 0);
+        case 'memory': return parseFloat(container.stats?.memoryPercent || 0);
+        case 'memusage': return container.stats?.memory || 0;
+        case 'net':
+            // approximate sort by total IO
+            if (!container.stats?.netIO) return 0;
+            let total = 0;
+            Object.values(container.stats.netIO).forEach(io => total += (io.rx_bytes + io.tx_bytes));
+            return total;
+        case 'block':
+            if (!container.stats?.blockIO) return 0;
+            return (container.stats.blockIO.read || 0) + (container.stats.blockIO.write || 0);
+        case 'pids': return container.stats?.pids || 0;
+        default: return 0;
+    }
+}
+
+function updateRowContent(row, container) {
     const isRunning = container.state === 'running';
-
-    // Header
-    card.querySelector('.container-name').textContent = container.name;
-    card.querySelector('.container-id').textContent = container.id;
-    card.querySelector('.container-image-badge').textContent = container.image; // optional
-    const statusDiv = card.querySelector('.status-indicator');
-
-    // Reset classes
-    statusDiv.className = 'status-indicator';
-    statusDiv.classList.add(`status-${container.state}`);
-
-    // Footer
-    card.querySelector('.state-text').textContent = container.status;
-
-    // Stats
     const stats = container.stats;
-    const cpuBar = card.querySelector('.cpu-fill');
-    const cpuVal = card.querySelector('.cpu-value');
-    const memBar = card.querySelector('.mem-fill');
-    const memVal = card.querySelector('.mem-percent');
-    const memUsage = card.querySelector('.mem-usage');
-    const netIo = card.querySelector('.net-io');
+
+    // Helper for safe text
+    const setText = (selector, text) => row.querySelector(selector).textContent = text;
+
+    setText('.c-name', container.name);
+    setText('.c-image-sub', container.image);
+    setText('.c-id', container.id);
+    setText('.c-state', container.state);
+
+    const statusDot = row.querySelector('.status-dot');
+    statusDot.className = 'status-dot';
+    statusDot.classList.add(`status-${container.state}`);
 
     if (isRunning && stats) {
         // CPU
         const cpuP = parseFloat(stats.cpu);
+        setText('.c-cpu-val', `${cpuP}%`);
+        const cpuBar = row.querySelector('.c-cpu-bar');
         cpuBar.style.width = `${Math.min(cpuP, 100)}%`;
-        cpuVal.textContent = `${cpuP}%`;
 
-        // Colorize CPU high usage
-        if (cpuP > 80) cpuBar.style.backgroundColor = 'var(--accent-danger)';
-        else if (cpuP > 50) cpuBar.style.backgroundColor = 'var(--accent-warning)';
-        else cpuBar.style.background = ''; // reset to css gradient
+        // Colorize CPU
+        if (cpuP > 80) cpuBar.style.background = 'var(--accent-danger)';
+        else if (cpuP > 50) cpuBar.style.background = 'var(--accent-warning)';
+        else cpuBar.style.background = ''; // use CSS gradient
 
         // Memory
         const memP = parseFloat(stats.memoryPercent);
-        memBar.style.width = `${Math.min(memP, 100)}%`;
-        memVal.textContent = `${memP}%`;
-        memUsage.textContent = `${formatBytes(stats.memory)} / ${formatBytes(stats.memoryLimit)}`;
+        setText('.c-mem-percent-val', `${memP}%`);
+        row.querySelector('.c-mem-bar').style.width = `${Math.min(memP, 100)}%`;
 
-        // Network
+        setText('.c-mem-usage', `${formatBytes(stats.memory)} / ${formatBytes(stats.memoryLimit)}`);
+
+        // Net I/O
         if (stats.netIO) {
-            // Simple sum of all interfaces for display
             let rx = 0;
             let tx = 0;
             for (const key in stats.netIO) {
                 rx += stats.netIO[key].rx_bytes;
                 tx += stats.netIO[key].tx_bytes;
             }
-            netIo.textContent = `↓${formatBytes(rx)} ↑${formatBytes(tx)}`;
+            setText('.c-net', `${formatBytes(rx)} / ${formatBytes(tx)}`);
+        } else {
+            setText('.c-net', '-- / --');
         }
 
-        // Update Chart
-        updateChart(container.id, stats.cpu);
+        // Block I/O
+        if (stats.blockIO) {
+            setText('.c-block', `${formatBytes(stats.blockIO.read)} / ${formatBytes(stats.blockIO.write)}`);
+        } else {
+            setText('.c-block', '-- / --');
+        }
+
+        // PIDs
+        setText('.c-pids', stats.pids);
 
     } else {
-        // Zero out if not running
-        cpuBar.style.width = '0%';
-        cpuVal.textContent = '0%';
-        memBar.style.width = '0%';
-        memVal.textContent = '0%';
-        memUsage.textContent = '- / -';
-        netIo.textContent = '--';
+        setText('.c-cpu-val', '0%');
+        row.querySelector('.c-cpu-bar').style.width = '0%';
+        setText('.c-mem-percent-val', '0%');
+        row.querySelector('.c-mem-bar').style.width = '0%';
+        setText('.c-mem-usage', '- / -');
+        setText('.c-net', '- / -');
+        setText('.c-block', '- / -');
+        setText('.c-pids', '-');
     }
 }
 
 function formatBytes(bytes, decimals = 2) {
-    if (!+bytes) return '0 B';
+    if (!+bytes) return '0B';
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))}${sizes[i]}`;
 }
 
-function initChart(id, cardElement) {
-    const ctx = cardElement.querySelector('.usage-chart').getContext('2d');
-
-    CHARTS[id] = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: Array(20).fill(''),
-            datasets: [{
-                label: 'CPU',
-                data: Array(20).fill(0),
-                borderColor: '#38bdf8',
-                borderWidth: 1.5,
-                tension: 0.4,
-                pointRadius: 0,
-                fill: true,
-                backgroundColor: (context) => {
-                    const ctx = context.chart.ctx;
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 60);
-                    gradient.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
-                    gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
-                    return gradient;
-                }
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false }
-            },
-            scales: {
-                x: { display: false },
-                y: {
-                    display: false,
-                    min: 0,
-                    suggestedMax: 10
-                }
-            },
-            animation: { duration: 0 }
-        }
-    });
-}
-
-function updateChart(id, cpuValue) {
-    if (!CHARTS[id]) return;
-
-    const chart = CHARTS[id];
-    const data = chart.data.datasets[0].data;
-
-    data.push(cpuValue);
-    data.shift();
-
-    // Dynamic Y axis if CPU spikes
-    if (cpuValue > chart.options.scales.y.suggestedMax) {
-        chart.options.scales.y.suggestedMax = cpuValue;
-    }
-
-    chart.update();
-}

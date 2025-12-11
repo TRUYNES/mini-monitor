@@ -58,30 +58,31 @@ function calculateMemoryUsage(stats) {
 async function monitorContainers() {
   try {
     const containers = await docker.listContainers({ all: true });
-    
+
     // We will fetch full list + basic stats in a polling manner for simplicity and robustness
     // For a production 'top' like feel, polling every 2-3 seconds is efficient enough compared to keeping open streams for N containers.
-    
+
     const enrichedContainers = await Promise.all(containers.map(async (containerInfo) => {
       const container = docker.getContainer(containerInfo.Id);
-      
+
       let state = containerInfo.State;
-      let stats = null; 
+      let stats = null;
 
       if (state === 'running') {
         try {
-           const rawStats = await getContainerStats(container);
-           const cpuPercent = calculateCPUPercent(rawStats);
-           const memStats = calculateMemoryUsage(rawStats);
-           
-           stats = {
-             cpu: cpuPercent.toFixed(2),
-             memory: memStats.usage,
-             memoryLimit: memStats.limit,
-             memoryPercent: memStats.percent.toFixed(2),
-             netIO: rawStats.networks, // This needs processing on client or here
-             blockIO: rawStats.blkio_stats // This needs processing
-           };
+          const rawStats = await getContainerStats(container);
+          const cpuPercent = calculateCPUPercent(rawStats);
+          const memStats = calculateMemoryUsage(rawStats);
+
+          stats = {
+            cpu: cpuPercent.toFixed(2),
+            memory: memStats.usage,
+            memoryLimit: memStats.limit,
+            memoryPercent: memStats.percent.toFixed(2),
+            netIO: rawStats.networks,
+            blockIO: calculateBlockIO(rawStats.blkio_stats),
+            pids: rawStats.pids_stats?.current || 0
+          };
         } catch (e) {
           console.error(`Error getting stats for ${containerInfo.Names[0]}:`, e.message);
         }
@@ -104,6 +105,27 @@ async function monitorContainers() {
   }
 }
 
+function calculateBlockIO(blkioStats) {
+  if (!blkioStats || !blkioStats.io_service_bytes_recursive) return { read: 0, write: 0 };
+
+  let read = 0;
+  let write = 0;
+
+  blkioStats.io_service_bytes_recursive.forEach(entry => {
+    if (entry.op === 'Read') read += entry.value;
+    if (entry.op === 'Write') write += entry.value;
+  });
+
+  return { read, write };
+}
+
+io.emit('containers', enrichedContainers);
+
+  } catch (error) {
+  console.error('Error listing containers:', error);
+}
+}
+
 // Update loop
 const POLL_INTERVAL = 2000;
 setInterval(monitorContainers, POLL_INTERVAL);
@@ -111,7 +133,7 @@ setInterval(monitorContainers, POLL_INTERVAL);
 io.on('connection', (socket) => {
   console.log('Client connected');
   monitorContainers(); // Send immediate update
-  
+
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });
