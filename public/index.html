@@ -32,12 +32,16 @@
             </div>
             <div class="header-stats">
                 <div class="stat-badge">
-                    <span class="label">Total Containers:</span>
-                    <span class="value" id="total-containers">0</span>
+                    <span class="badge-label">Total Containers:</span>
+                    <span class="badge-value" id="total-containers">0</span>
                 </div>
-                <div class="stat-badge running">
-                    <span class="label">Running:</span>
-                    <span class="value" id="running-containers">0</span>
+                <div class="stat-badge success">
+                    <span class="badge-label">Running:</span>
+                    <span class="badge-value" id="running-containers">0</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="badge-label">Uptime:</span>
+                    <span class="badge-value" id="header-uptime">--</span>
                 </div>
             </div>
         </header>
@@ -156,25 +160,7 @@
                     </div>
                 </div>
 
-                <!-- System Info Card -->
-                <div class="system-card card-os">
-                    <div class="card-top">
-                        <div class="sys-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M8 12h8" />
-                            </svg>
-                        </div>
-                        <span class="sys-title">SYSTEM</span>
-                    </div>
-                    <div class="card-middle">
-                        <div class="sys-value-sm" id="sys-os-distro">Loading...</div>
-                        <div class="sys-sub" id="sys-uptime">--</div>
-                    </div>
-                    <div class="card-bottom">
-                        <!-- Static, no chart needed for OS info -->
-                    </div>
-                </div>
+                <!-- System Info Card REMOVED -->
             </div>
 
             <!-- Containers Table -->

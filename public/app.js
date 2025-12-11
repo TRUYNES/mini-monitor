@@ -95,9 +95,10 @@ function updateSystemStats(stats) {
         document.getElementById('sys-net-tx').textContent = formatBytes(stats.net.tx);
     }
 
-    // System
-    document.getElementById('sys-os-distro').textContent = `${stats.os.distro} ${stats.os.release}`;
-    document.getElementById('sys-uptime').textContent = `Uptime: ${formatUptime(stats.os.uptime)}`;
+    // System (Header Uptime)
+    // document.getElementById('sys-os-distro').textContent = `${stats.os.distro} ${stats.os.release}`; // Removed card
+    const uptimeEl = document.getElementById('header-uptime');
+    if (uptimeEl) uptimeEl.textContent = formatUptime(stats.os.uptime);
 }
 
 class MiniChart {
