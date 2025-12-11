@@ -124,6 +124,10 @@ class MiniChart {
                 <path class="chart-line" d=""></path>
                 <line class="chart-hover-line" x1="0" y1="0" x2="0" y2="100%"></line>
             </svg>
+            <div class="chart-labels">
+                <span class="lbl-start"></span>
+                <span class="lbl-end"></span>
+            </div>
             <div class="peak-badge"></div>
             <div class="chart-tooltip"></div>
             <div class="hover-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></div>
@@ -137,6 +141,9 @@ class MiniChart {
         this.badge = this.container.querySelector('.peak-badge');
         this.overlay = this.container.querySelector('.hover-overlay');
 
+        this.lblStart = this.container.querySelector('.lbl-start');
+        this.lblEnd = this.container.querySelector('.lbl-end');
+
         this.overlay.addEventListener('mousemove', (e) => this.onHover(e));
         this.overlay.addEventListener('mouseleave', () => this.onLeave());
     }
@@ -146,7 +153,16 @@ class MiniChart {
     }
 
     render(data) {
-        if (!data || data.length < 2) return;
+        if (!data || data.length < 2) {
+            // Show empty state labels if needed
+            return;
+        }
+
+        // Update Time Labels
+        const startTime = new Date(data[0].timestamp);
+        const endTime = new Date(data[data.length - 1].timestamp);
+        this.lblStart.textContent = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.lblEnd.textContent = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         // Downsample for rendering performance if too many points (render max 200 pts)
         const sampleRate = Math.ceil(data.length / 200);

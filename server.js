@@ -134,6 +134,37 @@ async function monitorContainers() {
 const MAX_HISTORY = 14400;
 let systemHistory = [];
 
+// Persistence
+const fs = require('fs');
+const DATA_FILE = path.join(__dirname, 'history.json');
+
+// Load history on startup
+try {
+  if (fs.existsSync(DATA_FILE)) {
+    const raw = fs.readFileSync(DATA_FILE, 'utf8');
+    systemHistory = JSON.parse(raw);
+    console.log(`Loaded ${systemHistory.length} history points.`);
+  }
+} catch (e) {
+  console.error('Failed to load history:', e);
+}
+
+// Save history periodically
+function saveHistory() {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(systemHistory));
+  } catch (e) {
+    console.error('Failed to save history:', e);
+  }
+}
+
+// Save every minute
+setInterval(saveHistory, 60000);
+
+// Save on exit
+process.on('SIGINT', () => { saveHistory(); process.exit(); });
+process.on('SIGTERM', () => { saveHistory(); process.exit(); });
+
 async function monitorSystem() {
   try {
     // Note: cpuTemperature might require specific privileges on some systems
