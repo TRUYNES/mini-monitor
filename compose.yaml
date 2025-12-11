@@ -1,9 +1,6 @@
 services:
   truynes-monitor:
-    build:
-      context: https://github.com/TRUYNES/mini-monitor.git#main
-      args:
-        CACHE_DATE: "2025-12-11-v2"
+    build: https://github.com/TRUYNES/mini-monitor.git#main
 
     container_name: truynes-monitor
     restart: unless-stopped
