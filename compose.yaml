@@ -1,6 +1,6 @@
 services:
   mini-monitor:
-    build: .
+    build: https://github.com/TRUYNES/mini-monitor.git#main
     container_name: mini-monitor
     restart: unless-stopped
     ports:
