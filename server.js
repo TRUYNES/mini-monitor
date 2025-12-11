@@ -62,22 +62,26 @@ function calculateBlockIO(blkioStats) {
   let read = 0;
   let write = 0;
 
-  // cgroup v1 often uses io_service_bytes_recursive
-  if (blkioStats.io_service_bytes_recursive && Array.isArray(blkioStats.io_service_bytes_recursive)) {
-    blkioStats.io_service_bytes_recursive.forEach(entry => {
-      if (entry.op === 'Read') read += entry.value;
-      if (entry.op === 'Write') write += entry.value;
+  // Helper to process a stats array
+  const processStatsArray = (arr) => {
+    if (!Array.isArray(arr)) return;
+    arr.forEach(entry => {
+      const op = entry.op.toLowerCase();
+      if (op === 'read') read += entry.value;
+      else if (op === 'write') write += entry.value;
     });
-    return { read, write };
+  };
+
+  // Check recursive stats first (common for cgroup v1)
+  if (blkioStats.io_service_bytes_recursive) {
+    processStatsArray(blkioStats.io_service_bytes_recursive);
+  }
+  // Failover to non-recursive if recursive was empty or missing
+  // (Some cgroup v2 implementations might use this or other fields)
+  else if (blkioStats.io_service_bytes) {
+    processStatsArray(blkioStats.io_service_bytes);
   }
 
-  // Backup for other descriptors or cgroup v2 flattened stats if available in the raw object
-  // Note: Docker API varies wildly here. Sometimes it's buried in 'io_service_bytes_recursive'
-  // but sometimes that array is empty. 
-
-  // If we can't find it, we return 0. 
-  // TODO: For robust production monitoring, reading /proc/$pid/io inside the container namespace is better,
-  // but that requires root and nsenter. Sticking to Docker API for "mini" monitor.
   return { read, write };
 }
 

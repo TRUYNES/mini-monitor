@@ -165,28 +165,30 @@ class MiniChart {
         this.lblStart.textContent = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         this.lblEnd.textContent = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        if (data.length < 2) {
-            // Not enough data for a line, but labels are set
-            return;
+        // Generate points
+        // If only 1 point, create a fake second point to draw a flat line
+        let renderData = [...data];
+        if (renderData.length === 1) {
+            renderData.push({ ...renderData[0] });
         }
 
         // Downsample for rendering performance if too many points (render max 200 pts)
-        const sampleRate = Math.ceil(data.length / 200);
+        const sampleRate = Math.ceil(renderData.length / 200);
         const points = [];
         let maxVal = 0;
         let pMax = { val: 0, time: 0 };
 
-        for (let i = 0; i < data.length; i++) {
-            const val = parseFloat(this.getValue(data[i], this.dataKey));
+        for (let i = 0; i < renderData.length; i++) {
+            const val = parseFloat(this.getValue(renderData[i], this.dataKey));
             if (val > maxVal) maxVal = val;
 
             // Track absolute peak for badge
             if (val >= pMax.val) {
-                pMax = { val: val, time: data[i].timestamp };
+                pMax = { val: val, time: renderData[i].timestamp };
             }
 
-            if (i % sampleRate === 0 || i === data.length - 1) {
-                points.push({ x: i, y: val, time: data[i].timestamp, raw: val });
+            if (i % sampleRate === 0 || i === renderData.length - 1) {
+                points.push({ x: i, y: val, time: renderData[i].timestamp, raw: val });
             }
         }
 
