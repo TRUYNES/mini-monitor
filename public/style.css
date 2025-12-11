@@ -335,24 +335,29 @@ h1 {
 
 /* Modern Card Layout */
 .system-card {
-    height: 180px;
-    /* Increased slightly */
+    height: 200px;
+    /* Taller for more chart space */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    padding-bottom: 0;
+    /* Let chart hit the bottom edge */
+    overflow: hidden;
+    /* Clip chart corners */
 }
 
 .chart-container {
     width: 100%;
-    height: 70px;
-    /* Taller chart */
+    height: 90px;
+    /* Much taller */
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    /* Subtle separator */
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1));
+    margin-top: auto;
+    /* Push to bottom */
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
 }
 
 .chart-svg {

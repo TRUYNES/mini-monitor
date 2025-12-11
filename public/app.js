@@ -101,24 +101,38 @@ function updateSystemStats(stats) {
 }
 
 class MiniChart {
-    constructor(elementId, dataKey, colorClass) {
+    constructor(elementId, dataKey, color) {
         this.container = document.getElementById(elementId);
         this.dataKey = dataKey; // 'cpu.usage', 'mem.percent', 'net.rx', etc.
-        this.colorClass = colorClass;
+        this.color = color; // Store the color
 
         if (!this.container) return;
 
         this.setup();
     }
 
+    defineGradient(id) {
+        const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        gradient.id = `gradient-${id}`;
+        gradient.setAttribute('x1', '0%');
+        gradient.setAttribute('y1', '0%');
+        gradient.setAttribute('x2', '0%');
+        gradient.setAttribute('y2', '100%');
+
+        // Modern Fade: Color (0.3) -> Color (0.0)
+        // Avoid black mud at bottom
+        gradient.innerHTML = `
+            <stop offset="0%" stop-color="${this.color}" stop-opacity="0.3" />
+            <stop offset="100%" stop-color="${this.color}" stop-opacity="0" />
+        `;
+
+        this.defs.appendChild(gradient);
+    }
+
     setup() {
         this.container.innerHTML = `
             <svg class="chart-svg" preserveAspectRatio="none">
                 <defs>
-                    <linearGradient id="grad-${this.dataKey}" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:currentColor;stop-opacity:0.2" class="chart-fill" />
-                        <stop offset="100%" style="stop-color:currentColor;stop-opacity:0" class="chart-fill" />
-                    </linearGradient>
                 </defs>
                 <path class="chart-fill" d="" style="stroke:none"></path>
                 <path class="chart-line" d=""></path>
