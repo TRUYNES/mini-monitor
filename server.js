@@ -119,12 +119,7 @@ function calculateBlockIO(blkioStats) {
   return { read, write };
 }
 
-io.emit('containers', enrichedContainers);
 
-  } catch (error) {
-  console.error('Error listing containers:', error);
-}
-}
 
 // Update loop
 const POLL_INTERVAL = 2000;
