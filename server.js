@@ -229,7 +229,7 @@ async function monitorSystem() {
 }
 
 // Update loop
-const POLL_INTERVAL = 2000;
+const POLL_INTERVAL = 5000;
 setInterval(() => {
   monitorContainers();
   monitorSystem();

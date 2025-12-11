@@ -153,8 +153,9 @@ class MiniChart {
     }
 
     render(data) {
-        if (!data || data.length < 2) {
-            // Show empty state labels if needed
+        if (!data || data.length === 0) {
+            this.lblStart.textContent = '--:--';
+            this.lblEnd.textContent = '--:--';
             return;
         }
 
@@ -163,6 +164,11 @@ class MiniChart {
         const endTime = new Date(data[data.length - 1].timestamp);
         this.lblStart.textContent = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         this.lblEnd.textContent = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (data.length < 2) {
+            // Not enough data for a line, but labels are set
+            return;
+        }
 
         // Downsample for rendering performance if too many points (render max 200 pts)
         const sampleRate = Math.ceil(data.length / 200);
