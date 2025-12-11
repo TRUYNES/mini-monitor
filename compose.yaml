@@ -1,7 +1,7 @@
 services:
   truynes-monitor:
     build: https://github.com/TRUYNES/mini-monitor.git#main
-    image: truynes-monitor
+
     container_name: truynes-monitor
     restart: unless-stopped
     ports:
