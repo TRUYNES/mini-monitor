@@ -121,9 +121,9 @@ class MiniChart {
         gradient.setAttribute('y2', '100%');
 
         // Modern Fade: Color (0.2) -> Color (0.0)
-        // Extremely subtle to prevent "black" look complaints
+        // Strictly use the passed color. Ensure no black fallback.
         gradient.innerHTML = `
-            <stop offset="0%" stop-color="${this.color}" stop-opacity="0.2" />
+            <stop offset="0%" stop-color="${this.color}" stop-opacity="0.25" />
             <stop offset="100%" stop-color="${this.color}" stop-opacity="0" />
         `;
 
@@ -175,6 +175,11 @@ class MiniChart {
 
         this.overlay.addEventListener('mousemove', (e) => this.onHover(e));
         this.overlay.addEventListener('mouseleave', () => this.onLeave());
+
+        // Mobile Touch Support
+        this.overlay.addEventListener('touchstart', (e) => this.onHover(e), { passive: true });
+        this.overlay.addEventListener('touchmove', (e) => this.onHover(e), { passive: true });
+        this.overlay.addEventListener('touchend', () => this.onLeave());
     }
 
     getValue(obj, keyPath) {
@@ -242,7 +247,7 @@ class MiniChart {
         this.pathLine.setAttribute('d', pathD);
         this.pathFill.setAttribute('d', `${pathD} L ${width} ${height} L 0 ${height} Z`);
 
-        this.points = points; // Store points directly on instance for onHover
+        this.points = points; // Store directly for hover access
         this.maxVal = maxVal; // Store maxVal for onHover if needed, though not used in new snippet
     }
 
@@ -250,9 +255,9 @@ class MiniChart {
         if (!this.points || this.points.length === 0) return;
 
         const rect = this.container.getBoundingClientRect();
-        let clientX = e.clientX;
 
-        // Handle Touch Events
+        // Handle Mouse or Touch
+        let clientX = e.clientX;
         if (e.touches && e.touches.length > 0) {
             clientX = e.touches[0].clientX;
         }
@@ -278,7 +283,7 @@ class MiniChart {
         // Show Tooltip
         // Position: based on mouse X, but clamped
         let leftPos = x + 10;
-        if (leftPos + 100 > width) leftPos = x - 110;
+        if (leftPos + 90 > width) leftPos = x - 100;
 
         // Format Date
         const date = new Date(point.time);
