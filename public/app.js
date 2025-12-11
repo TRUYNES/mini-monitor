@@ -242,41 +242,66 @@ class MiniChart {
         this.pathLine.setAttribute('d', pathD);
         this.pathFill.setAttribute('d', `${pathD} L ${width} ${height} L 0 ${height} Z`);
 
-        this.renderData = { points, maxVal, width, height };
+        this.points = points; // Store points directly on instance for onHover
+        this.maxVal = maxVal; // Store maxVal for onHover if needed, though not used in new snippet
     }
 
     onHover(e) {
-        if (!this.renderData) return;
+        if (!this.points || this.points.length === 0) return;
 
         const rect = this.container.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const relX = Math.max(0, Math.min(1, x / rect.width));
+        let clientX = e.clientX;
 
-        const index = Math.round(relX * (this.renderData.points.length - 1));
-        const point = this.renderData.points[index];
+        // Handle Touch Events
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+        }
+
+        const x = clientX - rect.left;
+        const width = rect.width;
+
+        // Find closest point
+        // Map x (0..width) to index (0..points.length-1)
+        const ratio = Math.max(0, Math.min(1, x / width));
+        const index = Math.floor(ratio * (this.points.length - 1));
+        const point = this.points[index];
 
         if (!point) return;
 
-        const timeStr = new Date(point.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        this.tooltip.innerHTML = `<strong>${this.formatValue(point.raw)}</strong><br><span style="font-size:10px;opacity:0.8">${timeStr}</span>`;
+        // Draw Vertical Line
+        // X needs to be mapped to SVG ViewBox (0..100) -> NO, we use percentage for line x1/x2
+        const percent = (index / (this.points.length - 1)) * 100;
+        this.hoverLine.setAttribute('x1', `${percent}%`);
+        this.hoverLine.setAttribute('x2', `${percent}%`);
+        this.hoverLine.style.opacity = 1;
 
-        // Dynamic positioning
+        // Show Tooltip
+        // Position: based on mouse X, but clamped
         let leftPos = x + 10;
-        if (leftPos + 80 > rect.width) leftPos = x - 90; // Flip if too close to right edge
+        if (leftPos + 100 > width) leftPos = x - 110;
 
-        this.tooltip.style.display = 'block';
+        // Format Date
+        const date = new Date(point.time);
+        const timeStr = date.toLocaleTimeString();
+
+        this.tooltip.style.opacity = 1;
         this.tooltip.style.left = `${leftPos}px`;
         this.tooltip.style.top = '10px'; // Keep it near top to not obscure chart
+        this.tooltip.innerHTML = `
+            <div><strong>${point.y.toFixed(1)}</strong> ${this.getDataUnit()}</div>
+            <div style="font-size:0.8em;opacity:0.7">${timeStr}</div>
+        `;
+    }
 
-        // Show hover line
-        const lineX = (index / (this.renderData.points.length - 1)) * 100;
-        this.hoverLine.setAttribute('x1', `${lineX}%`);
-        this.hoverLine.setAttribute('x2', `${lineX}%`);
-        this.hoverLine.style.opacity = 0.5;
+    getDataUnit() {
+        if (this.dataKey.includes('net')) return '/s';
+        if (this.dataKey === 'cpu.usage' || this.dataKey === 'mem.percent') return '%';
+        if (this.dataKey === 'cpu.temp') return '°C';
+        return '';
     }
 
     onLeave() {
-        this.tooltip.style.display = 'none';
+        this.tooltip.style.opacity = 0;
         this.hoverLine.style.opacity = 0;
     }
 
