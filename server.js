@@ -57,16 +57,27 @@ function calculateMemoryUsage(stats) {
 }
 
 function calculateBlockIO(blkioStats) {
-  if (!blkioStats || !blkioStats.io_service_bytes_recursive) return { read: 0, write: 0 };
+  if (!blkioStats) return { read: 0, write: 0 };
 
   let read = 0;
   let write = 0;
 
-  blkioStats.io_service_bytes_recursive.forEach(entry => {
-    if (entry.op === 'Read') read += entry.value;
-    if (entry.op === 'Write') write += entry.value;
-  });
+  // cgroup v1 often uses io_service_bytes_recursive
+  if (blkioStats.io_service_bytes_recursive && Array.isArray(blkioStats.io_service_bytes_recursive)) {
+    blkioStats.io_service_bytes_recursive.forEach(entry => {
+      if (entry.op === 'Read') read += entry.value;
+      if (entry.op === 'Write') write += entry.value;
+    });
+    return { read, write };
+  }
 
+  // Backup for other descriptors or cgroup v2 flattened stats if available in the raw object
+  // Note: Docker API varies wildly here. Sometimes it's buried in 'io_service_bytes_recursive'
+  // but sometimes that array is empty. 
+
+  // If we can't find it, we return 0. 
+  // TODO: For robust production monitoring, reading /proc/$pid/io inside the container namespace is better,
+  // but that requires root and nsenter. Sticking to Docker API for "mini" monitor.
   return { read, write };
 }
 
@@ -117,18 +128,36 @@ async function monitorContainers() {
   }
 }
 
+// History Buffer (Last 8 hours)
+// Poll every 2 seconds = 30/min * 60 * 8 = 14,400 points max. 
+// To save bandwidth, we might want to emit history only on connect, and then live updates.
+const MAX_HISTORY = 14400;
+let systemHistory = [];
+
 async function monitorSystem() {
   try {
     // Note: cpuTemperature might require specific privileges on some systems
-    const [cpu, mem, osInfo, currentLoad, temp] = await Promise.all([
+    const [cpu, mem, osInfo, currentLoad, temp, netStats] = await Promise.all([
       si.cpu(),
       si.mem(),
       si.osInfo(),
       si.currentLoad(),
-      si.cpuTemperature()
+      si.cpuTemperature(),
+      si.networkStats()
     ]);
 
+    // Aggregate network stats (all interfaces)
+    let netRx = 0;
+    let netTx = 0;
+    if (netStats && netStats.length) {
+      netStats.forEach(iface => {
+        netRx += iface.rx_sec; // bytes per second
+        netTx += iface.tx_sec;
+      });
+    }
+
     const stats = {
+      timestamp: Date.now(),
       cpu: {
         manufacturer: cpu.manufacturer,
         brand: cpu.brand,
@@ -144,6 +173,10 @@ async function monitorSystem() {
         available: mem.available,
         percent: (mem.active / mem.total) * 100 // Pre-calculate percent based on active
       },
+      net: {
+        rx: netRx,
+        tx: netTx
+      },
       os: {
         platform: osInfo.platform,
         distro: osInfo.distro,
@@ -151,6 +184,12 @@ async function monitorSystem() {
         uptime: si.time().uptime
       }
     };
+
+    // Add to history
+    systemHistory.push(stats);
+    if (systemHistory.length > MAX_HISTORY) {
+      systemHistory.shift();
+    }
 
     io.emit('systemStats', stats);
   } catch (e) {
@@ -167,6 +206,10 @@ setInterval(() => {
 
 io.on('connection', (socket) => {
   console.log('Client connected');
+
+  // Send full history on connection
+  socket.emit('initHistory', systemHistory);
+
   monitorContainers(); // Send immediate update
   monitorSystem();
 

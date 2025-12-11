@@ -172,6 +172,75 @@ h1 {
     background: #a855f7;
 }
 
+/* Download - Green */
+.card-down {
+    border-top: 4px solid #10b981;
+}
+
+.card-down .sys-icon {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.card-down .sys-title {
+    color: #10b981;
+}
+
+.card-down .chart-line {
+    stroke: #10b981;
+}
+
+.card-down .chart-fill {
+    fill: rgba(16, 185, 129, 0.2);
+}
+
+/* Upload - Orange */
+.card-up {
+    border-top: 4px solid #f97316;
+}
+
+.card-up .sys-icon {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.1);
+}
+
+.card-up .sys-title {
+    color: #f97316;
+}
+
+.card-up .chart-line {
+    stroke: #f97316;
+}
+
+.card-up .chart-fill {
+    fill: rgba(249, 115, 22, 0.2);
+}
+
+/* Chart Styling */
+.card-cpu .chart-line {
+    stroke: #3b82f6;
+}
+
+.card-cpu .chart-fill {
+    fill: rgba(59, 130, 246, 0.2);
+}
+
+.card-ram .chart-line {
+    stroke: #a855f7;
+}
+
+.card-ram .chart-fill {
+    fill: rgba(168, 85, 247, 0.2);
+}
+
+.card-temp .chart-line {
+    stroke: #ef4444;
+}
+
+.card-temp .chart-fill {
+    fill: rgba(239, 68, 68, 0.2);
+}
+
 /* Temp - Red */
 .card-temp {
     border-top: 4px solid #ef4444;

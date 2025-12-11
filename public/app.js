@@ -51,39 +51,200 @@ socket.on('containers', (containers) => {
     updateTable(containers);
 });
 
+// History Data Storage
+let systemHistory = []; // Array of {timestamp, cpu, mem, net}
+
+socket.on('initHistory', (history) => {
+    systemHistory = history;
+    renderAllCharts();
+});
+
 socket.on('systemStats', (stats) => {
+    // Add new stat
+    systemHistory.push(stats);
+    // Keep last 8 hours approx (assuming 2s interval, max 14400)
+    if (systemHistory.length > 14400) systemHistory.shift();
+
     updateSystemStats(stats);
+    renderAllCharts(); // Optimized: could verify dirty flag, but JS is fast enough for <10k pts roughly
 });
 
 function updateSystemStats(stats) {
     // CPU
     document.getElementById('sys-cpu-val').textContent = `${stats.cpu.usage}%`;
     document.getElementById('sys-cpu-model').textContent = `${stats.cpu.manufacturer} ${stats.cpu.brand}`;
-    document.getElementById('sys-cpu-bar').style.width = `${Math.min(stats.cpu.usage, 100)}%`;
 
-    // Memory - Use percent from backend or calc
+    // Memory
     const memPercent = stats.mem.percent || ((stats.mem.used / stats.mem.total) * 100);
     document.getElementById('sys-mem-val').textContent = `${memPercent.toFixed(1)}%`;
     document.getElementById('sys-mem-detail').textContent = `${formatBytes(stats.mem.used)} / ${formatBytes(stats.mem.total)}`;
-    document.getElementById('sys-mem-bar').style.width = `${Math.min(memPercent, 100)}%`;
 
     // Temp
     const tempVal = stats.cpu.temp;
     const tempEl = document.getElementById('sys-temp-val');
-    const tempBar = document.getElementById('sys-temp-bar');
 
     if (tempVal && tempVal > 0) {
         tempEl.textContent = `${tempVal.toFixed(1)}°C`;
-        // Scale temp 0-100 (assuming 100 is max danger)
-        tempBar.style.width = `${Math.min(tempVal, 100)}%`;
     } else {
         tempEl.textContent = 'N/A';
-        tempBar.style.width = '0%';
+    }
+
+    // Network (New)
+    if (stats.net) {
+        document.getElementById('sys-net-rx').textContent = formatBytes(stats.net.rx);
+        document.getElementById('sys-net-tx').textContent = formatBytes(stats.net.tx);
     }
 
     // System
     document.getElementById('sys-os-distro').textContent = `${stats.os.distro} ${stats.os.release}`;
     document.getElementById('sys-uptime').textContent = `Uptime: ${formatUptime(stats.os.uptime)}`;
+}
+
+class MiniChart {
+    constructor(elementId, dataKey, colorClass) {
+        this.container = document.getElementById(elementId);
+        this.dataKey = dataKey; // 'cpu.usage', 'mem.percent', 'net.rx', etc.
+        this.colorClass = colorClass;
+
+        if (!this.container) return;
+
+        this.setup();
+    }
+
+    setup() {
+        this.container.innerHTML = `
+            <svg class="chart-svg" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="grad-${this.dataKey}" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:currentColor;stop-opacity:0.2" class="chart-fill" />
+                        <stop offset="100%" style="stop-color:currentColor;stop-opacity:0" class="chart-fill" />
+                    </linearGradient>
+                </defs>
+                <path class="chart-fill" d="" style="stroke:none"></path>
+                <path class="chart-line" d=""></path>
+                <line class="chart-hover-line" x1="0" y1="0" x2="0" y2="100%"></line>
+            </svg>
+            <div class="peak-badge"></div>
+            <div class="chart-tooltip"></div>
+            <div class="hover-overlay" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;"></div>
+        `;
+
+        this.svg = this.container.querySelector('svg');
+        this.pathLine = this.container.querySelector('.chart-line');
+        this.pathFill = this.container.querySelector('.chart-fill');
+        this.tooltip = this.container.querySelector('.chart-tooltip');
+        this.hoverLine = this.container.querySelector('.chart-hover-line');
+        this.badge = this.container.querySelector('.peak-badge');
+        this.overlay = this.container.querySelector('.hover-overlay');
+
+        this.overlay.addEventListener('mousemove', (e) => this.onHover(e));
+        this.overlay.addEventListener('mouseleave', () => this.onLeave());
+    }
+
+    getValue(obj, keyPath) {
+        return keyPath.split('.').reduce((o, k) => (o || {})[k], obj) || 0;
+    }
+
+    render(data) {
+        if (!data || data.length < 2) return;
+
+        // Downsample for rendering performance if too many points (render max 200 pts)
+        const sampleRate = Math.ceil(data.length / 200);
+        const points = [];
+        let maxVal = 0;
+        let pMax = { val: 0, time: 0 };
+
+        for (let i = 0; i < data.length; i++) {
+            const val = parseFloat(this.getValue(data[i], this.dataKey));
+            if (val > maxVal) maxVal = val;
+
+            // Track absolute peak for badge
+            if (val >= pMax.val) {
+                pMax = { val: val, time: data[i].timestamp };
+            }
+
+            if (i % sampleRate === 0 || i === data.length - 1) {
+                points.push({ x: i, y: val, time: data[i].timestamp, raw: val });
+            }
+        }
+
+        if (maxVal === 0) maxVal = 1; // Prevent divide by zero
+
+        // Update Badge
+        this.badge.textContent = `Peak: ${this.formatValue(pMax.val)}`;
+
+        // Draw SVG
+        const width = 100; // viewBox width %
+        const height = 100; // viewBox height %
+
+        this.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+        let pathD = points.map((p, i) => {
+            const x = (i / (points.length - 1)) * width;
+            const y = height - ((p.y / maxVal) * height); // Invert Y
+            return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+        }).join(' ');
+
+        this.pathLine.setAttribute('d', pathD);
+        this.pathFill.setAttribute('d', `${pathD} L ${width} ${height} L 0 ${height} Z`);
+
+        // Store data for interactions
+        this.renderData = { points, maxVal, width, height };
+    }
+
+    onHover(e) {
+        if (!this.renderData) return;
+
+        const rect = this.container.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const relX = Math.max(0, Math.min(1, x / rect.width));
+
+        // Find closest point
+        const index = Math.round(relX * (this.renderData.points.length - 1));
+        const point = this.renderData.points[index];
+
+        if (!point) return;
+
+        // Show Tooltip
+        const timeStr = new Date(point.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.tooltip.textContent = `${timeStr} - ${this.formatValue(point.raw)}`;
+        this.tooltip.style.display = 'block';
+        this.tooltip.style.left = `${x}px`;
+        this.tooltip.style.top = '10%'; // Top of chart
+
+        // Show line
+        const lineX = (index / (this.renderData.points.length - 1)) * 100; // % position
+        this.hoverLine.setAttribute('x1', `${lineX}%`);
+        this.hoverLine.setAttribute('x2', `${lineX}%`);
+        this.hoverLine.style.opacity = 1;
+    }
+
+    onLeave() {
+        this.tooltip.style.display = 'none';
+        this.hoverLine.style.opacity = 0;
+    }
+
+    formatValue(val) {
+        if (this.dataKey.includes('net')) return formatBytes(val) + '/s';
+        if (this.dataKey.includes('temp')) return val.toFixed(1) + '°C';
+        return val.toFixed(1) + '%';
+    }
+}
+
+// Initialize Charts
+let charts = {};
+document.addEventListener('DOMContentLoaded', () => {
+    charts = {
+        cpu: new MiniChart('chart-cpu', 'cpu.usage', 'card-cpu'),
+        mem: new MiniChart('chart-mem', 'mem.percent', 'card-ram'),
+        temp: new MiniChart('chart-temp', 'cpu.temp', 'card-temp'),
+        rx: new MiniChart('chart-rx', 'net.rx', 'card-down'),
+        tx: new MiniChart('chart-tx', 'net.tx', 'card-up')
+    };
+});
+
+function renderAllCharts() {
+    Object.values(charts).forEach(chart => chart.render(systemHistory));
 }
 
 function formatUptime(seconds) {
