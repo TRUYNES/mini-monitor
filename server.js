@@ -33,6 +33,7 @@ function calculateCPUPercent(stats) {
 
   const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
   var systemDelta = stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+  var percent = 0.0;
 
   if (systemDelta > 0.0 && cpuDelta > 0.0) {
     // Standard Docker stats is (cpuDelta / systemDelta) * cpuCount * 100
@@ -44,22 +45,11 @@ function calculateCPUPercent(stats) {
     // Actually, the correct formula for "System %" is just (cpuDelta / systemDelta) * number_cpus * 100 / number_cpus
     // So just (cpuDelta / systemDelta) * 100.0
 
-    percent = (cpuDelta / systemDelta) * 100.0;
-
-    // If we want it strictly "per core" summed (standard docker), we'd do * cpuCount.
-    // But user questioned >100%, so we normalize to system cap.
-    percent = percent * stats.cpu_stats.online_cpus; // Wait, this logic leads to >100.
-
-    // Let's use the normalized version:
-    // percent = (cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100.0; // This is >100
-
-    // Normalize:
-    // percent = ((cpuDelta / systemDelta) * stats.cpu_stats.online_cpus * 100.0) / stats.cpu_stats.online_cpus;
-    // which simplifies to:
+    // "System Total" usage calculation (0-100%)
     percent = (cpuDelta / systemDelta) * 100.0;
   }
 
-  return percent.toFixed(2);
+  return percent; // Return number, let caller format it or format here
 }
 
 function calculateMemoryUsage(stats) {

@@ -170,8 +170,10 @@ class MiniChart {
         this.badge = badge;
 
         // Define gradient and apply
-        this.defineGradient(this.dataKey);
-        this.pathFill.setAttribute('fill', `url(#gradient-${this.dataKey})`);
+        // Safe ID: replace dots with dashes
+        const safeId = this.dataKey.replace(/\./g, '-');
+        this.defineGradient(safeId);
+        this.pathFill.setAttribute('fill', `url(#gradient-${safeId})`);
 
         this.overlay.addEventListener('mousemove', (e) => this.onHover(e));
         this.overlay.addEventListener('mouseleave', () => this.onLeave());
