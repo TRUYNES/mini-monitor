@@ -177,64 +177,62 @@
                 </div>
             </div>
 
+            <!-- Containers Table -->
             <div class="table-container">
-                <table class="container-table" id="monitor-table">
+                <table class="container-table">
                     <thead>
                         <tr>
-                            <th data-sort="name" class="sortable">Name <span class="sort-icon"></span></th>
-                            <th data-sort="id" class="sortable">ID <span class="sort-icon"></span></th>
-                            <th data-sort="state" class="sortable">State <span class="sort-icon"></span></th>
-                            <th data-sort="cpu" class="sortable">CPU % <span class="sort-icon"></span></th>
-                            <th data-sort="memory" class="sortable">Mem % <span class="sort-icon"></span></th>
-                            <th data-sort="memusage" class="sortable">Mem Usage / Limit <span class="sort-icon"></span>
-                            </th>
-                            <th data-sort="net" class="sortable">Net I/O <span class="sort-icon"></span></th>
-                            <th data-sort="block" class="sortable">Block I/O <span class="sort-icon"></span></th>
-                            <th data-sort="pids" class="sortable">PIDs <span class="sort-icon"></span></th>
+                            <th data-sort="name">NAME <span class="sort-icon"></span></th>
+                            <th data-sort="cpu">CPU % <span class="sort-icon"></span></th>
+                            <th data-sort="memory">MEM % <span class="sort-icon"></span></th>
+                            <th data-sort="memoryLimit">MEM USAGE / LIMIT <span class="sort-icon"></span></th>
+                            <th data-sort="netIO">NET I/O <span class="sort-icon"></span></th>
+                            <th data-sort="blockIO">BLOCK I/O <span class="sort-icon"></span></th>
+                            <th data-sort="pids">PIDS <span class="sort-icon"></span></th>
+                            <th data-sort="state">STATE <span class="sort-icon"></span></th>
+                            <th data-sort="id">ID <span class="sort-icon"></span></th>
                         </tr>
                     </thead>
-                    <tbody id="container-list">
-                        <!-- Rows will be injected here via JS -->
+                    <tbody id="container-table-body">
+                        <!-- Rows injected via JS -->
                     </tbody>
                 </table>
             </div>
         </main>
     </div>
 
-    <!-- Template for Container Row -->
+    <!-- Row Template (Hidden) -->
     <template id="row-template">
         <tr class="container-row">
-            <td class="col-name">
-                <div class="name-wrapper">
-                    <div class="status-dot"></div>
-                    <div class="name-text">
-                        <span class="c-name"></span>
-                        <span class="c-image-sub"></span>
-                    </div>
+            <td class="c-name-cell">
+                <div class="status-dot"></div>
+                <div class="name-col">
+                    <span class="c-name"></span>
+                    <span class="c-image-sub"></span>
                 </div>
             </td>
-            <td class="col-id"><span class="c-id"></span></td>
-            <td class="col-state"><span class="c-state"></span></td>
-            <td class="col-cpu">
-                <div class="bar-wrapper">
-                    <span class="c-cpu-val">0%</span>
-                    <div class="progress-bar-bg small">
-                        <div class="progress-bar-fill c-cpu-bar"></div>
-                    </div>
+            <td class="c-cpu">
+                <div class="bar-val-row">
+                    <span class="c-cpu-val"></span>
+                </div>
+                <div class="mini-bar-bg">
+                    <div class="mini-bar-fill c-cpu-bar"></div>
                 </div>
             </td>
-            <td class="col-mem-percent">
-                <div class="bar-wrapper">
-                    <span class="c-mem-percent-val">0%</span>
-                    <div class="progress-bar-bg small">
-                        <div class="progress-bar-fill c-mem-bar"></div>
-                    </div>
+            <td class="c-mem-percent">
+                <div class="bar-val-row">
+                    <span class="c-mem-percent-val"></span>
+                </div>
+                <div class="mini-bar-bg">
+                    <div class="mini-bar-fill c-mem-bar"></div>
                 </div>
             </td>
-            <td class="col-mem-usage"><span class="c-mem-usage"></span></td>
-            <td class="col-net"><span class="c-net"></span></td>
-            <td class="col-block"><span class="c-block"></span></td>
-            <td class="col-pids"><span class="c-pids"></span></td>
+            <td class="c-mem-usage"></td>
+            <td class="c-net"></td>
+            <td class="c-block"></td>
+            <td class="c-pids"></td>
+            <td class="c-state"></td>
+            <td class="c-id"></td>
         </tr>
     </template>
 
