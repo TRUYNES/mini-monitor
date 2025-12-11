@@ -1,13 +1,13 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
+const socketIo = require('socket.io');
 const Docker = require('dockerode');
-const path = require('path');
 const si = require('systeminformation');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new socketIo.Server(server);
 
 // Initialize Docker connection
 // Default socket path for Linux/Mac
